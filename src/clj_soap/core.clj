@@ -1,5 +1,4 @@
-(ns clj-soap.core
-  (:require [clojure.core.incubator :refer [-?>]]))
+(ns clj-soap.core)
 
 ;;; Defining SOAP Server
 
@@ -75,14 +74,14 @@
   (.getNamespaceURI (.getName axis-op)))
 
 (defn axis-op-args [axis-op]
-  (for [elem (-?> (first (filter #(= "out" (.getDirection %))
+  (for [elem (some-> (first (filter #(= "out" (.getDirection %))
                                  (iterator-seq (.getMessages axis-op))))
                   .getSchemaElement .getSchemaType
                   .getParticle .getItems .getIterator iterator-seq)]
-    {:name (.getName elem) :type (-?> elem .getSchemaType .getName keyword)}))
+    {:name (.getName elem) :type (some-> elem .getSchemaType .getName keyword)}))
 
 (defn axis-op-rettype [axis-op]
-  (-?> (first (filter #(= "in" (.getDirection %))
+  (some-> (first (filter #(= "in" (.getDirection %))
                       (iterator-seq (.getMessages axis-op))))
        .getSchemaElement .getSchemaType .getParticle .getItems .getIterator
        iterator-seq first
@@ -109,6 +108,7 @@
   (doto (org.apache.axis2.client.ServiceClient. nil (java.net.URL. url) nil nil)
     (.setOptions
       (doto (org.apache.axis2.client.Options.)
+        (.setProperty org.apache.axis2.transport.http.HTTPConstants/CHUNKED org.apache.axis2.Constants/VALUE_FALSE)
         (.setTo (org.apache.axis2.addressing.EndpointReference. url))))))
 
 (defn make-request [op & args]
