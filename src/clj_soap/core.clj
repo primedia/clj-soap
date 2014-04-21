@@ -119,9 +119,9 @@
         op-args (axis-op-args op)]
     (doseq [[argval argtype] (map list args op-args)]
       (.addChild request
-                 (doto (.createOMElement
-                         factory (javax.xml.namespace.QName. (axis-op-namespace op) (:name argtype)))
-                   (.setText (obj->soap-str argval (:type argtype))))))
+        (doto (.createOMElement
+                factory (javax.xml.namespace.QName. (axis-op-namespace op) (:name argtype)))
+          (.setText (if (nil? argval) argval (obj->soap-str argval (:type argtype)))))))
     request))
 
 (defn get-result [op retelem]
