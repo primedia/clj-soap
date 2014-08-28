@@ -1,4 +1,4 @@
-(defproject com.rentpath/clj-soap "0.2.2"
+(defproject com.rentpath/clj-soap "0.2.3"
   :description "SOAP Client and Server using Apache Axis2."
   :url "https://github.com/primedia/clj-soap"
   :license {:name "Eclipse Public License"
