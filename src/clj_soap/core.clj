@@ -125,7 +125,7 @@
     request))
 
 (defn get-result [op retelem]
-  (let [ret-str (.getText (first (iterator-seq (.getChildElements retelem))))]
+  (let [ret-str (some-> (.getChildElements retelem) iterator-seq first .getText)]
     (if (not (empty? ret-str))
       (soap-str->obj ret-str (axis-op-rettype op))
       (str retelem))))
