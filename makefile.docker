@@ -14,7 +14,7 @@ BUILD_SHA       ?= $(shell git rev-parse --verify HEAD)
 REPO            := rentpath/csi-linkmod
 SHORT_BUILD_SHA := $(shell echo $(BUILD_SHA) | head -c 7)
 DATE            := $(shell date -u "+%Y%m%d")
-TAG_NAME        := $(DATE)-$(BUILD_NUMBER)-$(SHORT_BUILD_SHA)
+TAG_NAME        := v$(DATE)-$(BUILD_NUMBER)-$(SHORT_BUILD_SHA)
 DOCKER_TAG      := $(REPO):$(TAG_NAME)
 
 # Build and Release are called by docker's ONBUILD step
