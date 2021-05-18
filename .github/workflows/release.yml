@@ -1,0 +1,58 @@
+name: Release
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: build
+    runs-on: self-hosted
+    steps:
+      - name: cancel prior runs
+        uses: rentpath/cancel-workflow-action@0.5.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: check out most recent commit
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ github.token }}
+
+      - name: compile build env
+        run: docker pull rentpath/rp_clojure:lib-builder
+
+      - name: build, bump version, and deploy
+        run: |
+          docker run \
+          --env NEXUS_USERNAME='${{ secrets.NEXUS_USERNAME }}' \
+          --env NEXUS_PASSWORD='${{ secrets.NEXUS_PASSWORD }}' \
+          --env IS_MASTER='${{ contains(github.ref, 'refs/heads/main') }}' \
+          --mount type=bind,source="$(pwd)",target=/build \
+          rentpath/rp_clojure:lib-builder \
+          lein-release
+
+      - name: push updates to github
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      - name: set version vars
+        id: versioning
+        run: |
+          VTAG=$(cat .version)
+          echo "VTAG=$VTAG" >> $GITHUB_ENV
+          echo "::set-output name=vtag::${VTAG}"
+
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ steps.versioning.outputs.vtag }}
+          release_name: ${{ steps.versioning.outputs.vtag }}
+          body: '${{ steps.versioning.outputs.vtag }}'
+          draft: false
+          prerelease: false

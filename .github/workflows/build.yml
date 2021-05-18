@@ -1,0 +1,43 @@
+name: Build
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+jobs:
+  build:
+    name: build
+    runs-on: self-hosted
+    steps:
+      - name: cancel prior runs
+        uses: rentpath/cancel-workflow-action@0.5.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: remove 'ready' label
+        if: github.event.pull_request && github.event.pull_request.number
+        run: |
+          curl -X DELETE \
+               -H "Accept: application/vnd.github.v3+json" \
+               -H "Authorization: bearer ${{ github.token }}" \
+               "https://api.github.com/repos/${{ github.repository}}/issues/${{ github.event.pull_request.number }}/labels/PR%3A%20RE%20Ready"
+
+      - name: check out most recent commit
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ github.token }}
+
+      - name: compile build env
+        run: docker pull rentpath/rp_clojure:lib-builder
+
+      - name: build and deploy
+        run: |
+          docker run \
+          --env NEXUS_USERNAME='${{ secrets.NEXUS_USERNAME }}' \
+          --env NEXUS_PASSWORD='${{ secrets.NEXUS_PASSWORD }}' \
+          --env IS_MASTER='${{ contains(github.ref, 'refs/heads/main') }}' \
+          --mount type=bind,source="$(pwd)",target=/build \
+          rentpath/rp_clojure:lib-builder \
+          lein-build
